@@ -238,6 +238,7 @@ const executeBackup = async (scheduleId: number, manual = false) => {
 
 		await restic.backup(repository.config, volumePath, {
 			...backupOptions,
+			compressionMode: repository.compressionMode ?? "auto",
 			onProgress: (progress) => {
 				serverEvents.emit("backup:progress", {
 					scheduleId,

@@ -9,7 +9,7 @@ import { logger } from "./logger";
 import { cryptoUtils } from "./crypto";
 import type { RetentionPolicy } from "../modules/backups/backups.dto";
 import { safeSpawn } from "./spawn";
-import type { RepositoryConfig } from "~/schemas/restic";
+import type { CompressionMode, RepositoryConfig } from "~/schemas/restic";
 
 const backupOutputSchema = type({
 	message_type: "'summary'",
@@ -234,6 +234,7 @@ const backup = async (
 		exclude?: string[];
 		include?: string[];
 		tags?: string[];
+		compressionMode?: CompressionMode;
 		signal?: AbortSignal;
 		onProgress?: (progress: BackupProgress) => void;
 	},
@@ -241,7 +242,14 @@ const backup = async (
 	const repoUrl = buildRepoUrl(config);
 	const env = await buildEnv(config);
 
-	const args: string[] = ["--repo", repoUrl, "backup", "--one-file-system"];
+	const args: string[] = [
+		"--repo",
+		repoUrl,
+		"backup",
+		"--one-file-system",
+		"--compression",
+		options?.compressionMode ?? "auto",
+	];
 
 	if (options?.tags && options.tags.length > 0) {
 		for (const tag of options.tags) {
@@ -291,6 +299,7 @@ const backup = async (
 
 	let stdout = "";
 
+	logger.debug(`Executing: restic ${args.join(" ")}`);
 	const res = await safeSpawn({
 		command: "restic",
 		args,
