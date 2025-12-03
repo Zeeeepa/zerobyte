@@ -135,5 +135,5 @@ INSERT INTO `__new_volumes_table`("id", "short_id", "name", "type", "status", "l
 DROP TABLE `volumes_table`;--> statement-breakpoint
 ALTER TABLE `__new_volumes_table` RENAME TO `volumes_table`;--> statement-breakpoint
 CREATE UNIQUE INDEX `volumes_table_short_id_unique` ON `volumes_table` (`short_id`);--> statement-breakpoint
-CREATE UNIQUE INDEX `volumes_table_name_unique` ON `volumes_table` (`name`);
+CREATE UNIQUE INDEX `volumes_table_name_unique` ON `volumes_table` (`name`);--> statement-breakpoint
 PRAGMA foreign_keys=ON;--> statement-breakpoint
