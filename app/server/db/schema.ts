@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { int, integer, sqliteTable, text, primaryKey, uniqueIndex, unique } from "drizzle-orm/sqlite-core";
+import { int, integer, sqliteTable, text, primaryKey, unique } from "drizzle-orm/sqlite-core";
 import type { CompressionMode, RepositoryBackend, repositoryConfigSchema, RepositoryStatus } from "~/schemas/restic";
 import type { BackendStatus, BackendType, volumeConfigSchema } from "~/schemas/volumes";
 import type { NotificationType, notificationConfigSchema } from "~/schemas/notifications";
