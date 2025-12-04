@@ -330,40 +330,6 @@ export const updateScheduleMirrors = <ThrowOnError extends boolean = false>(opti
 export const getMirrorCompatibility = <ThrowOnError extends boolean = false>(options: Options<GetMirrorCompatibilityData, ThrowOnError>) => (options.client ?? client).get<GetMirrorCompatibilityResponses, unknown, ThrowOnError>({ url: '/api/v1/backups/{scheduleId}/mirrors/compatibility', ...options });
 
 /**
- * Get mirror repository assignments for a backup schedule
- */
-export const getScheduleMirrors = <ThrowOnError extends boolean = false>(options: Options<GetScheduleMirrorsData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetScheduleMirrorsResponses, unknown, ThrowOnError>({
-        url: '/api/v1/backups/{scheduleId}/mirrors',
-        ...options
-    });
-};
-
-/**
- * Update mirror repository assignments for a backup schedule
- */
-export const updateScheduleMirrors = <ThrowOnError extends boolean = false>(options: Options<UpdateScheduleMirrorsData, ThrowOnError>) => {
-    return (options.client ?? client).put<UpdateScheduleMirrorsResponses, unknown, ThrowOnError>({
-        url: '/api/v1/backups/{scheduleId}/mirrors',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-/**
- * Get mirror compatibility info for all repositories relative to a backup schedule's primary repository
- */
-export const getMirrorCompatibility = <ThrowOnError extends boolean = false>(options: Options<GetMirrorCompatibilityData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetMirrorCompatibilityResponses, unknown, ThrowOnError>({
-        url: '/api/v1/backups/{scheduleId}/mirrors/compatibility',
-        ...options
-    });
-};
-
-/**
  * List all notification destinations
  */
 export const listNotificationDestinations = <ThrowOnError extends boolean = false>(options?: Options<ListNotificationDestinationsData, ThrowOnError>) => (options?.client ?? client).get<ListNotificationDestinationsResponses, unknown, ThrowOnError>({ url: '/api/v1/notifications/destinations', ...options });

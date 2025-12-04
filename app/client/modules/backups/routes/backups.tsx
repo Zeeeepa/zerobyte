@@ -79,7 +79,7 @@ export default function Backups({ loaderData }: Route.ComponentProps) {
 										isInProgress={schedule.lastBackupStatus === "in_progress"}
 									/>
 								</div>
-								<CardDescription className="ml-0.5 flex items-center gap-2 text-xs">
+								<CardDescription className="ml-0.5 flex items-center gap-2 mt-2 text-xs">
 									<HardDrive className="h-3.5 w-3.5" />
 									<span className="truncate">{schedule.volume.name}</span>
 									<span className="text-muted-foreground">→</span>

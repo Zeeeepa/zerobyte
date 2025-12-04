@@ -753,7 +753,7 @@ export const updateScheduleNotificationsMutation = (options?: Partial<Options<Up
     return mutationOptions;
 };
 
-export const getScheduleMirrorsQueryKey = (options: Options<GetScheduleMirrorsData>) => createQueryKey("getScheduleMirrors", options);
+export const getScheduleMirrorsQueryKey = (options: Options<GetScheduleMirrorsData>) => createQueryKey('getScheduleMirrors', options);
 
 /**
  * Get mirror repository assignments for a backup schedule
@@ -788,7 +788,7 @@ export const updateScheduleMirrorsMutation = (options?: Partial<Options<UpdateSc
     return mutationOptions;
 };
 
-export const getMirrorCompatibilityQueryKey = (options: Options<GetMirrorCompatibilityData>) => createQueryKey("getMirrorCompatibility", options);
+export const getMirrorCompatibilityQueryKey = (options: Options<GetMirrorCompatibilityData>) => createQueryKey('getMirrorCompatibility', options);
 
 /**
  * Get mirror compatibility info for all repositories relative to a backup schedule's primary repository
@@ -806,7 +806,7 @@ export const getMirrorCompatibilityOptions = (options: Options<GetMirrorCompatib
     queryKey: getMirrorCompatibilityQueryKey(options)
 });
 
-export const listNotificationDestinationsQueryKey = (options?: Options<ListNotificationDestinationsData>) => createQueryKey("listNotificationDestinations", options);
+export const listNotificationDestinationsQueryKey = (options?: Options<ListNotificationDestinationsData>) => createQueryKey('listNotificationDestinations', options);
 
 /**
  * List all notification destinations
