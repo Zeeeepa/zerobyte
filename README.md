@@ -67,6 +67,34 @@ docker compose up -d
 
 Once the container is running, you can access the web interface at `http://<your-server-ip>:4096`.
 
+### Simplified setup (No remote mounts)
+
+If you only need to back up locally mounted folders and don't require remote share mounting capabilities, you can remove the `SYS_ADMIN` capability and FUSE device from your `docker-compose.yml`:
+
+```yaml
+services:
+  zerobyte:
+    image: ghcr.io/nicotsx/zerobyte:v0.19
+    container_name: zerobyte
+    restart: unless-stopped
+    ports:
+      - "4096:4096"
+    environment:
+      - TZ=Europe/Paris  # Set your timezone here
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/lib/zerobyte:/var/lib/zerobyte
+      - /path/to/your/directory:/mydata
+```
+
+**Trade-offs:**
+- ✅ Improved security by reducing container capabilities
+- ✅ Support for local directories
+- ✅ Keep support all repository types (local, S3, GCS, Azure, rclone)
+- ❌ Cannot mount NFS, SMB, or WebDAV shares directly from Zerobyte
+
+If you need remote mount capabilities, keep the original configuration with `cap_add: SYS_ADMIN` and `devices: /dev/fuse:/dev/fuse`.
+
 ## Examples
 
 See [examples/README.md](examples/README.md) for runnable, copy/paste-friendly examples.
@@ -77,7 +105,36 @@ Zerobyte supports multiple volume backends including NFS, SMB, WebDAV, and local
 
 To add your first volume, navigate to the "Volumes" section in the web interface and click on "Create volume". Fill in the required details such as volume name, type, and connection settings.
 
-If you want to back up a host directory, see the bind-mount example: [examples/directory-bind-mount/README.md](examples/directory-bind-mount/README.md).
+If you want to track a local directory on the same server where Zerobyte is running, you'll first need to mount that directory into the Zerobyte container. You can do this by adding a volume mapping in your `docker-compose.yml` file. For example, to mount `/path/to/your/directory` from the host to `/mydata` in the container, you would add the following line under the `volumes` section:
+
+```diff
+services:
+  zerobyte:
+    image: ghcr.io/nicotsx/zerobyte:v0.19
+    container_name: zerobyte
+    restart: unless-stopped
+    cap_add:
+      - SYS_ADMIN
+    ports:
+      - "4096:4096"
+    devices:
+      - /dev/fuse:/dev/fuse
+    environment:
+      - TZ=Europe/Paris
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/lib/zerobyte:/var/lib/zerobyte
++     - /path/to/your/directory:/mydata
+```
+
+After updating the `docker-compose.yml` file, restart the Zerobyte container to apply the changes:
+
+```bash
+docker compose down
+docker compose up -d
+```
+
+Now, when adding a new volume in the Zerobyte web interface, you can select "Directory" as the volume type and search for your mounted path (e.g., `/mydata`) as the source path.
 
 ![Preview](https://github.com/nicotsx/zerobyte/blob/main/screenshots/add-volume.png?raw=true)
 
@@ -121,9 +178,36 @@ Zerobyte can use [rclone](https://rclone.org/) to support 40+ cloud storage prov
    rclone listremotes
    ```
 
-4. **Mount the rclone config into the Zerobyte container** using the example: [examples/rclone-config-mount/README.md](examples/rclone-config-mount/README.md)
+4. **Mount the rclone config into the Zerobyte container** by updating your `docker-compose.yml`:
 
-5. **Create a repository** in Zerobyte:
+   ```diff
+   services:
+     zerobyte:
+       image: ghcr.io/nicotsx/zerobyte:v0.19
+       container_name: zerobyte
+       restart: unless-stopped
+       cap_add:
+         - SYS_ADMIN
+       ports:
+         - "4096:4096"
+       devices:
+         - /dev/fuse:/dev/fuse
+       environment:
+         - TZ=Europe/Paris
+       volumes:
+         - /etc/localtime:/etc/localtime:ro
+         - /var/lib/zerobyte:/var/lib/zerobyte
+   +     - ~/.config/rclone:/root/.config/rclone
+   ```
+
+5. **Restart the Zerobyte container**:
+
+   ```bash
+   docker compose down
+   docker compose up -d
+   ```
+
+6. **Create a repository** in Zerobyte:
    - Select "rclone" as the repository type
    - Choose your configured remote from the dropdown
    - Specify the path within your remote (e.g., `backups/zerobyte`)
