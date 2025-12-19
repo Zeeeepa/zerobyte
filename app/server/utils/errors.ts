@@ -26,7 +26,6 @@ const resticErrorCodes: Record<number, string> = {
 	11: "Failed to lock repository: Unable to acquire a lock on the repository. Try to run doctor on the repository.",
 	12: "Wrong repository password: The provided password for the repository is incorrect.",
 	130: "Backup interrupted: The backup process was interrupted.",
-	999: "The backup was stopped by the user.",
 };
 
 export class ResticError extends Error {

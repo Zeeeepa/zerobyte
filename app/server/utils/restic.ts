@@ -337,6 +337,11 @@ const backup = async (
 		},
 	});
 
+	if (options?.signal?.aborted) {
+		logger.warn("Restic backup was aborted by signal.");
+		return { result: null, exitCode: res.exitCode };
+	}
+
 	if (res.exitCode === 3) {
 		logger.error(`Restic backup encountered read errors: ${res.stderr.toString()}`);
 	}
@@ -344,11 +349,6 @@ const backup = async (
 	if (res.exitCode !== 0 && res.exitCode !== 3) {
 		logger.error(`Restic backup failed: ${res.stderr.toString()}`);
 		logger.error(`Command executed: restic ${args.join(" ")}`);
-
-		if (options?.signal?.aborted) {
-			logger.error("Restic backup was aborted by signal.");
-			throw new ResticError(999, "Backup operation stopped by user.");
-		}
 
 		throw new ResticError(res.exitCode, res.stderr.toString());
 	}
