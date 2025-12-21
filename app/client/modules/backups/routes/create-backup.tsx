@@ -71,7 +71,12 @@ export default function CreateBackup({ loaderData }: Route.ComponentProps) {
 	const handleSubmit = (formValues: BackupScheduleFormValues) => {
 		if (!selectedVolumeId) return;
 
-		const cronExpression = getCronExpression(formValues.frequency, formValues.dailyTime, formValues.weeklyDay, formValues.monthlyDays);
+		const cronExpression = getCronExpression(
+			formValues.frequency,
+			formValues.dailyTime,
+			formValues.weeklyDay,
+			formValues.monthlyDays,
+		);
 
 		const retentionPolicy: Record<string, number> = {};
 		if (formValues.keepLast) retentionPolicy.keepLast = formValues.keepLast;

@@ -88,12 +88,9 @@ const backupScheduleToFormValues = (schedule?: BackupSchedule): InternalFormValu
 	const isDaily = !isHourly && dayOfMonthPart === "*" && dayOfWeekPart === "*";
 
 	const frequency = isHourly ? "hourly" : isMonthly ? "monthly" : isDaily ? "daily" : "weekly";
-
 	const dailyTime = isHourly ? undefined : `${hourPart.padStart(2, "0")}:${minutePart.padStart(2, "0")}`;
-
 	const weeklyDay = frequency === "weekly" ? dayOfWeekPart : undefined;
-	
-	const monthlyDays = isMonthly ? dayOfMonthPart.split(",") : undefined; 
+	const monthlyDays = isMonthly ? dayOfMonthPart.split(",") : undefined;
 
 	const patterns = schedule.includePatterns || [];
 	const isGlobPattern = (p: string) => /[*?[\]]/.test(p);
@@ -103,8 +100,8 @@ const backupScheduleToFormValues = (schedule?: BackupSchedule): InternalFormValu
 	return {
 		name: schedule.name,
 		repositoryId: schedule.repositoryId,
-        frequency,
-        monthlyDays, 
+		frequency,
+		monthlyDays,
 		dailyTime,
 		weeklyDay,
 		includePatterns: fileBrowserPaths.length > 0 ? fileBrowserPaths : undefined,
@@ -257,7 +254,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 													<SelectItem value="hourly">Hourly</SelectItem>
 													<SelectItem value="daily">Daily</SelectItem>
 													<SelectItem value="weekly">Weekly</SelectItem>
-													<SelectItem value="monthly">Monthly</SelectItem>
+													<SelectItem value="monthly">Specific days</SelectItem>
 												</SelectContent>
 											</Select>
 										</FormControl>
@@ -312,41 +309,41 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 								/>
 							)}
 							{frequency === "monthly" && (
-                                <FormField
-                                    control={form.control}
-                                    name="monthlyDays"
-                                    render={({ field }) => (
-                                        <FormItem className="md:col-span-2">
-                                            <FormLabel>Days of the month</FormLabel>
-                                            <FormControl>
-                                                <div className="grid grid-cols-7 gap-4 w-max">
-                                                    {Array.from({ length: 31 }, (_, i) => {
-                                                        const day = (i + 1).toString();
-                                                        const isSelected = field.value?.includes(day);
-                                                        return (
-                                                            <Button
-                                                                type="button"
-                                                                key={day}
-                                                                variant={isSelected ? "primary" : "secondary"}
-                                                                size="icon"
-                                                                onClick={() => {
-                                                                    const current = field.value || [];
-                                                                    const next = isSelected ? current.filter((d) => d !== day) : [...current, day];
-                                                                    field.onChange(next);
-                                                                }}
-                                                            >
-                                                                {day}
-                                                            </Button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </FormControl>
-                                            <FormDescription>Select one or more days when the backup should run.</FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            )}
+								<FormField
+									control={form.control}
+									name="monthlyDays"
+									render={({ field }) => (
+										<FormItem className="md:col-span-2">
+											<FormLabel>Days of the month</FormLabel>
+											<FormControl>
+												<div className="grid grid-cols-7 gap-4 w-max">
+													{Array.from({ length: 31 }, (_, i) => {
+														const day = (i + 1).toString();
+														const isSelected = field.value?.includes(day);
+														return (
+															<Button
+																type="button"
+																key={day}
+																variant={isSelected ? "primary" : "secondary"}
+																size="icon"
+																onClick={() => {
+																	const current = field.value || [];
+																	const next = isSelected ? current.filter((d) => d !== day) : [...current, day];
+																	field.onChange(next);
+																}}
+															>
+																{day}
+															</Button>
+														);
+													})}
+												</div>
+											</FormControl>
+											<FormDescription>Select one or more days when the backup should run.</FormDescription>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							)}
 						</CardContent>
 					</Card>
 

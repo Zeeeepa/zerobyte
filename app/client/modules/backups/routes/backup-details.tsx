@@ -141,7 +141,12 @@ export default function ScheduleDetailsPage({ params, loaderData }: Route.Compon
 	const handleSubmit = (formValues: BackupScheduleFormValues) => {
 		if (!schedule) return;
 
-		const cronExpression = getCronExpression(formValues.frequency, formValues.dailyTime, formValues.weeklyDay, formValues.monthlyDays);
+		const cronExpression = getCronExpression(
+			formValues.frequency,
+			formValues.dailyTime,
+			formValues.weeklyDay,
+			formValues.monthlyDays,
+		);
 
 		const retentionPolicy: Record<string, number> = {};
 		if (formValues.keepLast) retentionPolicy.keepLast = formValues.keepLast;
