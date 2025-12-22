@@ -8,6 +8,7 @@ import { Button, buttonVariants } from "~/client/components/ui/button";
 import type { Snapshot } from "~/client/lib/types";
 import { listSnapshotFilesOptions } from "~/client/api-client/@tanstack/react-query.gen";
 import { useFileBrowser } from "~/client/hooks/use-file-browser";
+import { cn } from "~/client/lib/utils";
 
 interface Props {
 	snapshot: Snapshot;
@@ -87,7 +88,9 @@ export const SnapshotFileBrowser = (props: Props) => {
 					<div className="flex items-start justify-between">
 						<div>
 							<CardTitle>File Browser</CardTitle>
-							<CardDescription>{`Viewing snapshot from ${new Date(snapshot?.time ?? 0).toLocaleString()}`}</CardDescription>
+							<CardDescription
+								className={cn({ hidden: !snapshot.time })}
+							>{`Viewing snapshot from ${new Date(snapshot?.time ?? 0).toLocaleString()}`}</CardDescription>
 						</div>
 						<div className="flex gap-2">
 							<Link
