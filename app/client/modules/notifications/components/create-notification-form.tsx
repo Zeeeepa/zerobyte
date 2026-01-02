@@ -527,7 +527,9 @@ export const CreateNotificationForm = ({ onSubmit, mode = "create", initialValue
 									<FormControl>
 										<SecretInput {...field} placeholder="••••••••" />
 									</FormControl>
-									<FormDescription>Access token for server authentication, if required.</FormDescription>
+									<FormDescription>
+										Access token for server authentication. Will take precedence over username/password if set.
+									</FormDescription>
 									<FormMessage />
 								</FormItem>
 							)}
