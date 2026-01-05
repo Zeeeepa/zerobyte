@@ -31,11 +31,9 @@ const getEffectiveLocalPath = (repository: Repository): string | null => {
 	const config = repository.config as { name: string; path?: string; isExistingRepository?: boolean };
 
 	if (config.isExistingRepository) {
-		// Imported repositories use the path directly
 		return config.path ?? null;
 	}
 
-	// New repositories append the name to the base path
 	const basePath = config.path || REPOSITORY_BASE;
 	return `${basePath}/${config.name}`;
 };
