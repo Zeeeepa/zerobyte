@@ -14,13 +14,9 @@ import { ensureOnlyOneUser } from "./auth-middlewares/only-one-user";
 
 export type AuthMiddlewareContext = MiddlewareContext<MiddlewareOptions, AuthContext<BetterAuthOptions>>;
 
-let _auth: ReturnType<typeof betterAuth> | null = null;
-
-const createAuth = async () => {
-	if (_auth) return _auth;
-
-	_auth = betterAuth({
-		secret: await cryptoUtils.deriveSecret("better-auth"),
+const createBetterAuth = (secret: string) =>
+	betterAuth({
+		secret,
 		hooks: {
 			before: createAuthMiddleware(async (ctx) => {
 				await ensureOnlyOneUser(ctx);
@@ -53,10 +49,19 @@ const createAuth = async () => {
 		plugins: [username({})],
 	});
 
+type Auth = ReturnType<typeof createBetterAuth>;
+
+let _auth: Auth | null = null;
+
+const createAuth = async (): Promise<Auth> => {
+	if (_auth) return _auth;
+
+	_auth = createBetterAuth(await cryptoUtils.deriveSecret("better-auth"));
+
 	return _auth;
 };
 
-export const auth = {
+export const auth: Auth = {
 	get api() {
 		if (!_auth) throw new Error("Auth not initialized. Call initAuth() first.");
 		return _auth.api;
@@ -65,6 +70,6 @@ export const auth = {
 		if (!_auth) throw new Error("Auth not initialized. Call initAuth() first.");
 		return _auth.handler;
 	},
-};
+} as Auth;
 
 export const initAuth = createAuth;
