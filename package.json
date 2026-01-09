@@ -5,7 +5,7 @@
 	"scripts": {
 		"lint": "oxlint --type-aware",
 		"build": "react-router build",
-		"dev": "bunx --bun vite",
+		"dev": "NODE_ENV=development bunx --bun vite",
 		"start": "bun ./dist/server/index.js",
 		"cli:dev": "bun run app/server/cli/main.ts",
 		"cli": "ZEROBYTE_CLI=1 bun ./dist/server/index.js",

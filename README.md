@@ -70,6 +70,32 @@ docker compose up -d
 
 Once the container is running, you can access the web interface at `http://<your-server-ip>:4096`.
 
+## Development (no Docker)
+
+You can run Zerobyte locally during development without Docker:
+
+```bash
+bun install
+bun run dev
+```
+
+For local development, create a `.env.local` file at the repo root and override the Docker paths:
+
+```bash
+# Example
+DATABASE_URL=./data/zerobyte.db
+RESTIC_PASS_FILE=./data/restic.pass
+RESTIC_CACHE_DIR=./data/restic/cache
+ZEROBYTE_REPOSITORIES_DIR=./data/repositories
+ZEROBYTE_VOLUMES_DIR=./data/volumes
+```
+
+Notes:
+
+- Remote mount backends (NFS/SMB/WebDAV/SFTP) rely on Linux mount tooling and `CAP_SYS_ADMIN`; on macOS they are expected to be unavailable.
+- To actually run backups/repository checks, install `restic` on your machine (e.g. via Homebrew). If `restic` is not installed, the app still starts but backup operations will fail with a clear error.
+- rclone support is detected via `RCLONE_CONFIG` or `~/.config/rclone/rclone.conf`.
+
 ## Configuration
 
 Zerobyte can be customized using environment variables. Below are the available options:
