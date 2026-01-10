@@ -80,9 +80,10 @@ Zerobyte can be customized using environment variables. Below are the available 
 | :-------------------- | :----------------------------------------------------------------------------------------------------------------- | :--------- |
 | `PORT`                | The port the web interface and API will listen on.                                                                 | `4096`     |
 | `RESTIC_HOSTNAME`     | The hostname used by Restic when creating snapshots. Automatically detected if a custom hostname is set in Docker. | `zerobyte` |
+| `TZ`                  | Timezone for the container (e.g., `Europe/Paris`). **Crucial for accurate backup scheduling.**                     | `UTC`      |
+| `TRUSTED_ORIGINS`     | Comma-separated list of trusted origins for CORS (e.g., `http://localhost:3000,http://example.com`).               | (none)     |
 | `LOG_LEVEL`           | Logging verbosity. Options: `debug`, `info`, `warn`, `error`.                                                      | `info`     |
 | `SERVER_IDLE_TIMEOUT` | Idle timeout for the server in seconds.                                                                            | `60`       |
-| `TZ`                  | Timezone for the container (e.g., `Europe/Paris`). **Crucial for accurate backup scheduling.**                     | `UTC`      |
 
 ### Secret References
 
