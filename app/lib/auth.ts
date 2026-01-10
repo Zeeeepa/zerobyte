@@ -11,12 +11,14 @@ import { convertLegacyUserOnFirstLogin } from "./auth-middlewares/convert-legacy
 import { cryptoUtils } from "~/server/utils/crypto";
 import { db } from "~/server/db/db";
 import { ensureOnlyOneUser } from "./auth-middlewares/only-one-user";
+import { config } from "~/server/core/config";
 
 export type AuthMiddlewareContext = MiddlewareContext<MiddlewareOptions, AuthContext<BetterAuthOptions>>;
 
 const createBetterAuth = (secret: string) =>
 	betterAuth({
 		secret,
+		trustedOrigins: config.trustedOrigins ?? ["*"],
 		hooks: {
 			before: createAuthMiddleware(async (ctx) => {
 				await ensureOnlyOneUser(ctx);
@@ -55,9 +57,6 @@ const createBetterAuth = (secret: string) =>
 				},
 			}),
 		],
-		advanced: {
-			disableOriginCheck: true,
-		},
 	});
 
 type Auth = ReturnType<typeof createBetterAuth>;

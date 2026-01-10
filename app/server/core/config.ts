@@ -32,6 +32,7 @@ const envSchema = type({
 	PORT: 'string.integer.parse = "4096"',
 	MIGRATIONS_PATH: "string?",
 	APP_VERSION: "string = 'dev'",
+	TRUSTED_ORIGINS: "string?",
 }).pipe((s) => ({
 	__prod__: s.NODE_ENV === "production",
 	environment: s.NODE_ENV,
@@ -41,6 +42,7 @@ const envSchema = type({
 	port: s.PORT,
 	migrationsPath: s.MIGRATIONS_PATH,
 	appVersion: s.APP_VERSION,
+	trustedOrigins: s.TRUSTED_ORIGINS?.split(",").map((origin) => origin.trim()),
 }));
 
 const parseConfig = (env: unknown) => {

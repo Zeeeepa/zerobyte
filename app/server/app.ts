@@ -1,5 +1,6 @@
 import { Scalar } from "@scalar/hono-api-reference";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { logger as honoLogger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { rateLimiter } from "hono-rate-limiter";
@@ -37,6 +38,10 @@ export const scalarDescriptor = Scalar({
 
 export const createApp = () => {
 	const app = new Hono();
+
+	if (config.trustedOrigins) {
+		app.use(cors({ origin: config.trustedOrigins }));
+	}
 
 	if (config.environment !== "test") {
 		app.use(honoLogger());
