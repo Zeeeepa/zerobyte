@@ -856,16 +856,9 @@ const copy = async (
 	const destUploadLimit = formatBandwidthLimit(destConfig.uploadLimit);
 
 	if (sourceConfig.backend === "rclone") {
-		// For rclone source backends, use rclone.from.bwlimit with effective source limit
-		const sourceUploadLimit = formatBandwidthLimit(sourceConfig.uploadLimit);
-
-		// Determine effective limit for source (pick smaller numeric value if both exist)
+		// For rclone source backends, use rclone.from.bwlimit with source download limit only
 		let effectiveSourceLimit = "";
-		if (sourceUploadLimit && sourceDownloadLimit) {
-			effectiveSourceLimit = parseInt(sourceUploadLimit) < parseInt(sourceDownloadLimit) ? sourceUploadLimit : sourceDownloadLimit;
-		} else if (sourceUploadLimit) {
-			effectiveSourceLimit = sourceUploadLimit;
-		} else if (sourceDownloadLimit) {
+		if (sourceDownloadLimit) {
 			effectiveSourceLimit = sourceDownloadLimit;
 		}
 
@@ -960,7 +953,7 @@ export const addCommonArgs = (args: string[], env: Record<string, string>, confi
 			// Determine effective limit (choose more restrictive when both exist)
 			let effectiveLimit = "";
 			if (uploadLimit && downloadLimit) {
-				effectiveLimit = parseInt(uploadLimit) < parseInt(downloadLimit) ? uploadLimit : downloadLimit;
+				effectiveLimit = parseInt(uploadLimit, 10) < parseInt(downloadLimit, 10) ? uploadLimit : downloadLimit;
 			} else if (uploadLimit) {
 				effectiveLimit = uploadLimit;
 			} else if (downloadLimit) {
@@ -1003,7 +996,7 @@ export const restic = {
 };
 
 // Helper function to clean up temporary files
-const cleanupTemporaryKeys = async (env: Record<string, string>) => {
+export const cleanupTemporaryKeys = async (env: Record<string, string>) => {
 	const keysToClean = ["_SFTP_KEY_PATH", "_SFTP_KNOWN_HOSTS_PATH", "RESTIC_CACERT", "GOOGLE_APPLICATION_CREDENTIALS"];
 
 	for (const key of keysToClean) {
