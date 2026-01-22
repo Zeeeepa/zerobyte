@@ -1,7 +1,14 @@
 import crypto from "node:crypto";
+import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { db } from "../../../db/db";
-import { organization, repositoriesTable, volumesTable, notificationDestinationsTable } from "../../../db/schema";
+import {
+	organization,
+	repositoriesTable,
+	volumesTable,
+	notificationDestinationsTable,
+	twoFactor,
+} from "../../../db/schema";
 import { logger } from "../../../utils/logger";
 import { toMessage } from "~/server/utils/errors";
 import { cryptoUtils } from "~/server/utils/crypto";
@@ -9,6 +16,7 @@ import type { RepositoryConfig } from "~/schemas/restic";
 import type { BackendConfig } from "~/schemas/volumes";
 import type { NotificationConfig } from "~/schemas/notifications";
 import { RESTIC_PASS_FILE } from "~/server/core/constants";
+import { symmetricDecrypt, symmetricEncrypt } from "better-auth/crypto";
 
 /**
  * Migration: Isolate Restic Passwords
@@ -48,6 +56,14 @@ const legacyDecrypt = async (encryptedData: string): Promise<string> => {
 	decrypted = Buffer.concat([decrypted, decipher.final()]);
 
 	return decrypted.toString();
+};
+
+const hkdf = promisify(crypto.hkdf);
+
+const deriveSecretFromBase = async (baseSecret: string, label: string): Promise<string> => {
+	const derivedKey = await hkdf("sha256", baseSecret, "", label, 32);
+
+	return Buffer.from(derivedKey).toString("hex");
 };
 
 type MigrationError = { name: string; error: string };
@@ -145,6 +161,33 @@ const execute = async () => {
 			logger.info(`Re-keyed secrets for notification: ${notification.name}`);
 		} catch (err) {
 			errors.push({ name: `notification:${notification.name}`, error: toMessage(err) });
+		}
+	}
+
+	// Step 6: Re-key two-factor secrets
+	const legacyAuthSecret = await deriveSecretFromBase(legacyPassword, "better-auth");
+	const currentAuthSecret = await cryptoUtils.deriveSecret("better-auth");
+	const twoFactorRecords = await db.query.twoFactor.findMany({});
+
+	for (const record of twoFactorRecords) {
+		try {
+			const decryptedSecret = await symmetricDecrypt({ key: legacyAuthSecret, data: record.secret });
+			const decryptedBackupCodes = await symmetricDecrypt({
+				key: legacyAuthSecret,
+				data: record.backupCodes,
+			});
+
+			await db
+				.update(twoFactor)
+				.set({
+					secret: await symmetricEncrypt({ key: currentAuthSecret, data: decryptedSecret }),
+					backupCodes: await symmetricEncrypt({ key: currentAuthSecret, data: decryptedBackupCodes }),
+				})
+				.where(eq(twoFactor.id, record.id));
+
+			logger.info(`Re-keyed two-factor secrets for user: ${record.userId}`);
+		} catch (err) {
+			errors.push({ name: `twoFactor:${record.userId}`, error: toMessage(err) });
 		}
 	}
 
