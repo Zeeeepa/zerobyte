@@ -329,7 +329,9 @@ const listFiles = async (idOrShortId: string | number, subPath?: string) => {
 	const requestedPath = subPath ? path.join(volumePath, subPath) : volumePath;
 
 	const normalizedPath = path.normalize(requestedPath);
-	if (!normalizedPath.startsWith(volumePath)) {
+	const relative = path.relative(volumePath, normalizedPath);
+
+	if (relative.startsWith("..") || path.isAbsolute(relative)) {
 		throw new InternalServerError("Invalid path");
 	}
 
