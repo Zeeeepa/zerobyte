@@ -1,9 +1,8 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { and, eq, ne } from "drizzle-orm";
-import { ConflictError, InternalServerError, NotFoundError } from "http-errors-enhanced";
-import slugify from "slugify";
+import { and, eq } from "drizzle-orm";
+import { BadRequestError, InternalServerError, NotFoundError } from "http-errors-enhanced";
 import { db } from "../../db/db";
 import { volumesTable } from "../../db/schema";
 import { cryptoUtils } from "../../utils/crypto";
@@ -65,14 +64,10 @@ const findVolume = async (idOrShortId: string | number) => {
 
 const createVolume = async (name: string, backendConfig: BackendConfig) => {
 	const organizationId = getOrganizationId();
-	const slug = slugify(name, { lower: true, strict: true });
+	const trimmedName = name.trim();
 
-	const existing = await db.query.volumesTable.findFirst({
-		where: and(eq(volumesTable.name, slug), eq(volumesTable.organizationId, organizationId)),
-	});
-
-	if (existing) {
-		throw new ConflictError("Volume already exists");
+	if (trimmedName.length === 0) {
+		throw new BadRequestError("Volume name cannot be empty");
 	}
 
 	const shortId = generateShortId();
@@ -82,7 +77,7 @@ const createVolume = async (name: string, backendConfig: BackendConfig) => {
 		.insert(volumesTable)
 		.values({
 			shortId,
-			name: slug,
+			name: trimmedName,
 			config: encryptedConfig,
 			type: backendConfig.backend,
 			organizationId,
@@ -191,23 +186,10 @@ const updateVolume = async (idOrShortId: string | number, volumeData: UpdateVolu
 		throw new NotFoundError("Volume not found");
 	}
 
-	let newName = existing.name;
-	if (volumeData.name !== undefined && volumeData.name !== existing.name) {
-		const newSlug = slugify(volumeData.name, { lower: true, strict: true });
+	const newName = volumeData.name !== undefined ? volumeData.name.trim() : existing.name;
 
-		const conflict = await db.query.volumesTable.findFirst({
-			where: and(
-				eq(volumesTable.name, newSlug),
-				ne(volumesTable.id, existing.id),
-				eq(volumesTable.organizationId, organizationId),
-			),
-		});
-
-		if (conflict) {
-			throw new ConflictError("A volume with this name already exists");
-		}
-
-		newName = newSlug;
+	if (newName.length === 0) {
+		throw new BadRequestError("Volume name cannot be empty");
 	}
 
 	const configChanged =
@@ -221,7 +203,7 @@ const updateVolume = async (idOrShortId: string | number, volumeData: UpdateVolu
 
 	const newConfig = volumeConfigSchema(volumeData.config || existing.config);
 	if (newConfig instanceof type.errors) {
-		throw new InternalServerError("Invalid volume configuration");
+		throw new BadRequestError("Invalid volume configuration");
 	}
 
 	const encryptedConfig = await encryptSensitiveFields(newConfig);
@@ -332,7 +314,7 @@ const listFiles = async (idOrShortId: string | number, subPath?: string) => {
 	const relative = path.relative(volumePath, normalizedPath);
 
 	if (relative.startsWith("..") || path.isAbsolute(relative)) {
-		throw new InternalServerError("Invalid path");
+		throw new BadRequestError("Invalid path");
 	}
 
 	try {

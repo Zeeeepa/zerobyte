@@ -1,6 +1,5 @@
-import { eq, and, ne, inArray } from "drizzle-orm";
-import { ConflictError, InternalServerError, NotFoundError } from "http-errors-enhanced";
-import slugify from "slugify";
+import { eq, and, inArray } from "drizzle-orm";
+import { BadRequestError, ConflictError, InternalServerError, NotFoundError } from "http-errors-enhanced";
 import { db } from "../../db/db";
 import {
 	notificationDestinationsTable,
@@ -29,7 +28,10 @@ const listDestinations = async () => {
 const getDestination = async (id: number) => {
 	const organizationId = getOrganizationId();
 	const destination = await db.query.notificationDestinationsTable.findFirst({
-		where: and(eq(notificationDestinationsTable.id, id), eq(notificationDestinationsTable.organizationId, organizationId)),
+		where: and(
+			eq(notificationDestinationsTable.id, id),
+			eq(notificationDestinationsTable.organizationId, organizationId),
+		),
 	});
 
 	if (!destination) {
@@ -139,14 +141,10 @@ async function decryptSensitiveFields(config: NotificationConfig): Promise<Notif
 
 const createDestination = async (name: string, config: NotificationConfig) => {
 	const organizationId = getOrganizationId();
-	const slug = slugify(name, { lower: true, strict: true });
+	const trimmedName = name.trim();
 
-	const existing = await db.query.notificationDestinationsTable.findFirst({
-		where: and(eq(notificationDestinationsTable.name, slug), eq(notificationDestinationsTable.organizationId, organizationId)),
-	});
-
-	if (existing) {
-		throw new ConflictError("Notification destination with this name already exists");
+	if (trimmedName.length === 0) {
+		throw new BadRequestError("Name cannot be empty");
 	}
 
 	const encryptedConfig = await encryptSensitiveFields(config);
@@ -154,7 +152,7 @@ const createDestination = async (name: string, config: NotificationConfig) => {
 	const [created] = await db
 		.insert(notificationDestinationsTable)
 		.values({
-			name: slug,
+			name: trimmedName,
 			type: config.type,
 			config: encryptedConfig,
 			organizationId,
@@ -184,16 +182,11 @@ const updateDestination = async (
 	};
 
 	if (updates.name !== undefined) {
-		const slug = slugify(updates.name, { lower: true, strict: true });
-
-		const conflict = await db.query.notificationDestinationsTable.findFirst({
-			where: and(eq(notificationDestinationsTable.name, slug), ne(notificationDestinationsTable.id, id), eq(notificationDestinationsTable.organizationId, organizationId)),
-		});
-
-		if (conflict) {
-			throw new ConflictError("Notification destination with this name already exists");
+		const trimmedName = updates.name.trim();
+		if (trimmedName.length === 0) {
+			throw new BadRequestError("Name cannot be empty");
 		}
-		updateData.name = slug;
+		updateData.name = trimmedName;
 	}
 
 	if (updates.enabled !== undefined) {
@@ -202,7 +195,7 @@ const updateDestination = async (
 
 	const newConfig = notificationConfigSchema(updates.config || existing.config);
 	if (newConfig instanceof type.errors) {
-		throw new InternalServerError("Invalid notification configuration");
+		throw new BadRequestError("Invalid notification configuration");
 	}
 
 	const encryptedConfig = await encryptSensitiveFields(newConfig);
@@ -212,7 +205,9 @@ const updateDestination = async (
 	const [updated] = await db
 		.update(notificationDestinationsTable)
 		.set(updateData)
-		.where(eq(notificationDestinationsTable.id, id))
+		.where(
+			and(eq(notificationDestinationsTable.id, id), eq(notificationDestinationsTable.organizationId, organizationId)),
+		)
 		.returning();
 
 	if (!updated) {
@@ -227,7 +222,9 @@ const deleteDestination = async (id: number) => {
 	await getDestination(id);
 	await db
 		.delete(notificationDestinationsTable)
-		.where(and(eq(notificationDestinationsTable.id, id), eq(notificationDestinationsTable.organizationId, organizationId)));
+		.where(
+			and(eq(notificationDestinationsTable.id, id), eq(notificationDestinationsTable.organizationId, organizationId)),
+		);
 };
 
 const testDestination = async (id: number) => {
