@@ -43,7 +43,7 @@ test("can backup & restore a file", async ({ page }) => {
 	await page.getByRole("link", { name: "Backups" }).click();
 	await page.getByRole("button", { name: "Create a backup job" }).click();
 	await page.getByRole("combobox").filter({ hasText: "Choose a volume to backup" }).click();
-	await page.getByRole("option", { name: "test-volume" }).click();
+	await page.getByRole("option", { name: "Test Volume" }).click();
 	await page.getByRole("textbox", { name: "Backup name" }).fill("Test Backup");
 	await page.getByRole("combobox").filter({ hasText: "Select a repository" }).click();
 	await page.getByRole("option", { name: "Test Repo" }).click();
