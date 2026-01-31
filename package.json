@@ -103,6 +103,7 @@
 		"@types/react": "^19.2.10",
 		"@types/react-dom": "^19.2.3",
 		"@types/semver": "^7.7.1",
+		"babel-plugin-react-compiler": "^1.0.0",
 		"dotenv-cli": "^11.0.0",
 		"drizzle-kit": "^0.31.7",
 		"lightningcss": "^1.31.1",
@@ -115,6 +116,7 @@
 		"typescript": "^5.9.3",
 		"vite": "^7.3.1",
 		"vite-bundle-analyzer": "^1.2.3",
+		"vite-plugin-babel": "^1.4.1",
 		"vite-tsconfig-paths": "^6.0.5"
 	},
 	"overrides": {
