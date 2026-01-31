@@ -187,8 +187,8 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 				className="grid gap-4 xl:grid-cols-[minmax(0,2.3fr)_minmax(320px,1fr)]"
 				id={formId}
 			>
-				<div className="grid gap-4">
-					<Card>
+				<div className="grid gap-4 min-w-0">
+					<Card className="min-w-0">
 						<CardHeader>
 							<CardTitle>Backup automation</CardTitle>
 							<CardDescription className="mt-1">
@@ -361,7 +361,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 						</CardContent>
 					</Card>
 
-					<Card>
+					<Card className="min-w-0">
 						<CardHeader>
 							<CardTitle>Backup paths</CardTitle>
 							<CardDescription>
@@ -426,7 +426,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 						</CardContent>
 					</Card>
 
-					<Card>
+					<Card className="min-w-0">
 						<CardHeader>
 							<CardTitle>Exclude patterns</CardTitle>
 							<CardDescription>
@@ -507,7 +507,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 						</CardContent>
 					</Card>
 
-					<Card>
+					<Card className="min-w-0">
 						<CardHeader>
 							<CardTitle>Retention policy</CardTitle>
 							<CardDescription>Define how many snapshots to keep. Leave empty to keep all.</CardDescription>
