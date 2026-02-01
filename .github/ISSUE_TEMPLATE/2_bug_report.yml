@@ -12,6 +12,16 @@ body:
       options:
         - label: I have read the [troubleshooting guide](https://github.com/nicotsx/zerobyte/blob/main/TROUBLESHOOTING.md)
           required: true
+  - type: checkboxes
+    id: rclone_preflight
+    attributes:
+      label: Rclone Pre-flight Checklist (if applicable)
+      description: If your issue involves rclone, confirm you've tested on the host first as described in the troubleshooting guide
+      options:
+        - label: This issue is NOT related to rclone (skip if not using rclone)
+        - label: I have tested `rclone listremotes` and `rclone lsd remote:` on the **host** and they work
+        - label: I have verified the rclone config is mounted into the container
+        - label: I have restarted the container after config changes
   - type: textarea
     id: description
     attributes:

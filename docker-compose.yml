@@ -22,7 +22,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /var/lib/zerobyte:/var/lib/zerobyte
       - ./app:/app/app
-      - ~/.config/rclone:/root/.config/rclone
+      - ~/.config/rclone:/root/.config/rclone:ro
       - ./tmp/:/test-data
 
   zerobyte-prod:
@@ -47,7 +47,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/lib/zerobyte:/var/lib/zerobyte
-      - ~/.config/rclone:/root/.config/rclone
+      - ~/.config/rclone:/root/.config/rclone:ro
 
   zerobyte-e2e:
     build:
