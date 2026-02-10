@@ -13,6 +13,7 @@ import { safeSpawn, exec } from "./spawn";
 import type { CompressionMode, RepositoryConfig, OverwriteMode, BandwidthLimit } from "~/schemas/restic";
 import { ResticError } from "./errors";
 import { db } from "../db/db";
+import { safeJsonParse } from "./json";
 
 const backupOutputSchema = type({
 	message_type: "'summary'",
@@ -552,15 +553,69 @@ const snapshots = async (config: RepositoryConfig, options: { tags?: string[]; o
 	return result;
 };
 
+export type ResticForgetResponse = ForgetGroup[];
+
+export interface ForgetGroup {
+	tags: string[] | null;
+	host: string;
+	paths: string[] | null;
+	keep: Snapshot[];
+	remove: Snapshot[] | null;
+	reasons: ForgetReason[];
+}
+
+export interface Snapshot {
+	time: string;
+	parent?: string;
+	tree: string;
+	paths: string[];
+	hostname: string;
+	username?: string;
+	uid?: number;
+	gid?: number;
+	excludes?: string[] | null;
+	tags?: string[] | null;
+	program_version?: string;
+	summary?: SnapshotSummary;
+	id: string;
+	short_id: string;
+}
+
+export interface SnapshotSummary {
+	backup_start: string;
+	backup_end: string;
+	files_new: number;
+	files_changed: number;
+	files_unmodified: number;
+	dirs_new: number;
+	dirs_changed: number;
+	dirs_unmodified: number;
+	data_blobs: number;
+	tree_blobs: number;
+	data_added: number;
+	data_added_packed: number;
+	total_files_processed: number;
+	total_bytes_processed: number;
+}
+
+export interface ForgetReason {
+	snapshot: Snapshot;
+	matches: string[];
+}
+
 const forget = async (
 	config: RepositoryConfig,
 	options: RetentionPolicy,
-	extra: { tag: string; organizationId: string },
+	extra: { tag: string; organizationId: string; dryRun?: boolean },
 ) => {
 	const repoUrl = buildRepoUrl(config);
 	const env = await buildEnv(config, extra.organizationId);
 
 	const args: string[] = ["--repo", repoUrl, "forget", "--group-by", "tags", "--tag", extra.tag];
+
+	if (extra.dryRun) {
+		args.push("--dry-run", "--no-lock");
+	}
 
 	if (options.keepLast) {
 		args.push("--keep-last", String(options.keepLast));
@@ -584,7 +639,10 @@ const forget = async (
 		args.push("--keep-within-duration", options.keepWithinDuration);
 	}
 
-	args.push("--prune");
+	if (!extra.dryRun) {
+		args.push("--prune");
+	}
+
 	addCommonArgs(args, env, config);
 
 	const res = await exec({ command: "restic", args, env });
@@ -595,7 +653,10 @@ const forget = async (
 		throw new ResticError(res.exitCode, res.stderr);
 	}
 
-	return { success: true };
+	const lines = res.stdout.split("\n").filter((line) => line.trim());
+	const result = extra.dryRun ? safeJsonParse<ResticForgetResponse>(lines.at(-1) ?? "[]") : null;
+
+	return { success: true, data: result };
 };
 
 const deleteSnapshots = async (config: RepositoryConfig, snapshotIds: string[], organizationId: string) => {
