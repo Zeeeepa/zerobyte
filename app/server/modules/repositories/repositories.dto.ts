@@ -8,6 +8,7 @@ import {
 	repositoryConfigSchema,
 	doctorResultSchema,
 } from "~/schemas/restic";
+import { resticSnapshotSummarySchema } from "~/schemas/restic-dto";
 
 export const repositorySchema = type({
 	id: "string",
@@ -180,6 +181,7 @@ export const snapshotSchema = type({
 	tags: "string[]",
 	retentionCategories: "string[]",
 	hostname: "string?",
+	summary: resticSnapshotSummarySchema.optional(),
 });
 
 const listSnapshotsResponse = snapshotSchema.array();

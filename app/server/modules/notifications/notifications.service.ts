@@ -9,11 +9,14 @@ import {
 import { cryptoUtils } from "../../utils/crypto";
 import { logger } from "../../utils/logger";
 import { sendNotification } from "../../utils/shoutrrr";
+import { formatDuration } from "~/utils/utils";
 import { buildShoutrrrUrl } from "./builders";
 import { notificationConfigSchema, type NotificationConfig, type NotificationEvent } from "~/schemas/notifications";
+import type { ResticBackupRunSummaryDto } from "~/schemas/restic-dto";
 import { toMessage } from "../../utils/errors";
 import { type } from "arktype";
 import { getOrganizationId } from "~/server/core/request-context";
+import { formatBytes } from "~/utils/format-bytes";
 
 const listDestinations = async () => {
 	const organizationId = getOrganizationId();
@@ -315,6 +318,70 @@ const updateScheduleNotifications = async (
 	return getScheduleNotifications(scheduleId);
 };
 
+const formatBytesText = (bytes: number) => {
+	const { text, unit } = formatBytes(bytes, {
+		base: 1024,
+		locale: "en-US",
+		fallback: "-",
+	});
+
+	return unit ? `${text} ${unit}` : text;
+};
+
+const buildBackupNotificationLines = (summary?: ResticBackupRunSummaryDto) => {
+	if (!summary) return [];
+
+	const safeNumber = (value: number | undefined) => (typeof value === "number" && Number.isFinite(value) ? value : 0);
+	const safeCountText = (value: number | undefined) => safeNumber(value).toLocaleString();
+	const safeBytesText = (value: number | undefined) => formatBytesText(safeNumber(value));
+	const safeDurationText = (value: number | undefined) =>
+		typeof value === "number" && Number.isFinite(value) ? formatDuration(Math.round(value)) : "N/A";
+
+	const hasDetailedStats = summary.files_new || summary.files_changed || summary.dirs_new || summary.data_blobs;
+
+	if (!hasDetailedStats) {
+		const lines: (string | null)[] = [];
+
+		if (summary.total_duration) {
+			lines.push(`Duration: ${Math.round(summary.total_duration)}s`);
+		}
+		if (summary.total_files_processed !== undefined) {
+			lines.push(`Files: ${summary.total_files_processed.toLocaleString()}`);
+		}
+		if (summary.total_bytes_processed !== undefined) {
+			lines.push(`Size: ${safeBytesText(summary.total_bytes_processed)}`);
+		}
+		if (summary.snapshot_id) {
+			lines.push(`Snapshot: ${summary.snapshot_id}`);
+		}
+
+		return lines.filter((line): line is string => Boolean(line));
+	}
+
+	const snapshotText = summary.snapshot_id ?? "N/A";
+
+	const lines = [
+		"Overview:",
+		`- Data added: ${safeBytesText(summary.data_added)}`,
+		summary.data_added_packed !== undefined ? `- Data stored: ${safeBytesText(summary.data_added_packed)}` : null,
+		`- Total files processed: ${safeCountText(summary.total_files_processed)}`,
+		`- Total bytes processed: ${safeBytesText(summary.total_bytes_processed)}`,
+		"Backup Statistics:",
+		`- Files new: ${safeCountText(summary.files_new)}`,
+		`- Files changed: ${safeCountText(summary.files_changed)}`,
+		`- Files unmodified: ${safeCountText(summary.files_unmodified)}`,
+		`- Dirs new: ${safeCountText(summary.dirs_new)}`,
+		`- Dirs changed: ${safeCountText(summary.dirs_changed)}`,
+		`- Dirs unmodified: ${safeCountText(summary.dirs_unmodified)}`,
+		`- Data blobs: ${safeCountText(summary.data_blobs)}`,
+		`- Tree blobs: ${safeCountText(summary.tree_blobs)}`,
+		`- Total duration: ${safeDurationText(summary.total_duration)}`,
+		`- Snapshot: ${snapshotText}`,
+	];
+
+	return lines.filter(Boolean);
+};
+
 const sendBackupNotification = async (
 	scheduleId: number,
 	event: NotificationEvent,
@@ -323,10 +390,7 @@ const sendBackupNotification = async (
 		repositoryName: string;
 		scheduleName?: string;
 		error?: string;
-		duration?: number;
-		filesProcessed?: number;
-		bytesProcessed?: string;
-		snapshotId?: string;
+		summary?: ResticBackupRunSummaryDto;
 	},
 ) => {
 	try {
@@ -369,11 +433,7 @@ const sendBackupNotification = async (
 				const decryptedConfig = await decryptSensitiveFields(assignment.destination.config);
 				const shoutrrrUrl = buildShoutrrrUrl(decryptedConfig);
 
-				const result = await sendNotification({
-					shoutrrrUrl,
-					title,
-					body,
-				});
+				const result = await sendNotification({ shoutrrrUrl, title, body });
 
 				if (result.success) {
 					logger.info(
@@ -402,13 +462,11 @@ function buildNotificationMessage(
 		repositoryName: string;
 		scheduleName?: string;
 		error?: string;
-		duration?: number;
-		filesProcessed?: number;
-		bytesProcessed?: string;
-		snapshotId?: string;
+		summary?: ResticBackupRunSummaryDto;
 	},
 ) {
 	const backupName = context.scheduleName ?? "backup";
+	const notificationLines = buildBackupNotificationLines(context.summary);
 
 	switch (event) {
 		case "start":
@@ -423,38 +481,34 @@ function buildNotificationMessage(
 					.join("\n"),
 			};
 
-		case "success":
+		case "success": {
+			const bodyLines = [
+				`Volume: ${context.volumeName}`,
+				`Repository: ${context.repositoryName}`,
+				context.scheduleName ? `Schedule: ${context.scheduleName}` : null,
+				...notificationLines,
+			];
+
 			return {
 				title: `Zerobyte ${backupName} completed successfully`,
-				body: [
-					`Volume: ${context.volumeName}`,
-					`Repository: ${context.repositoryName}`,
-					context.scheduleName ? `Schedule: ${context.scheduleName}` : null,
-					context.duration ? `Duration: ${Math.round(context.duration / 1000)}s` : null,
-					context.filesProcessed !== undefined ? `Files: ${context.filesProcessed}` : null,
-					context.bytesProcessed ? `Size: ${context.bytesProcessed}` : null,
-					context.snapshotId ? `Snapshot: ${context.snapshotId}` : null,
-				]
-					.filter(Boolean)
-					.join("\n"),
+				body: bodyLines.filter(Boolean).join("\n"),
 			};
+		}
 
-		case "warning":
+		case "warning": {
+			const bodyLines = [
+				`Volume: ${context.volumeName}`,
+				`Repository: ${context.repositoryName}`,
+				context.scheduleName ? `Schedule: ${context.scheduleName}` : null,
+				context.error ? `Warning: ${context.error}` : null,
+				...notificationLines,
+			];
+
 			return {
 				title: `Zerobyte ${backupName} completed with warnings`,
-				body: [
-					`Volume: ${context.volumeName}`,
-					`Repository: ${context.repositoryName}`,
-					context.scheduleName ? `Schedule: ${context.scheduleName}` : null,
-					context.duration ? `Duration: ${Math.round(context.duration / 1000)}s` : null,
-					context.filesProcessed !== undefined ? `Files: ${context.filesProcessed}` : null,
-					context.bytesProcessed ? `Size: ${context.bytesProcessed}` : null,
-					context.snapshotId ? `Snapshot: ${context.snapshotId}` : null,
-					context.error ? `Warning: ${context.error}` : null,
-				]
-					.filter(Boolean)
-					.join("\n"),
+				body: bodyLines.filter(Boolean).join("\n"),
 			};
+		}
 
 		case "failure":
 			return {
